@@ -12,3 +12,6 @@ dist/
 xcuserdata/
 *.xcuserstate
 DerivedData/
+
+# Agent notes (local only)
+AGENTS.md
