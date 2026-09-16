@@ -1,0 +1,169 @@
+import AppKit
+import SwiftUI
+import Combine
+
+extension Notification.Name {
+    static let openSettings = Notification.Name("openSettings")
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+    let monitor = MonitorService()
+    let displays = DisplaysProvider()
+    let fanControl: FanControlViewModel
+    private var statusItem: NSStatusItem?
+    private let statusView = StatusContentView()
+    private var popover: NSPopover?
+    private var settingsWindow: NSWindow?
+    private var cancellables: Set<AnyCancellable> = []
+    private var outsideClickMonitor: Any?
+
+    override init() {
+        if let smc = monitor.smc {
+            fanControl = FanControlViewModel(controller: FanController(smc: smc))
+        } else {
+            fanControl = FanControlViewModel(controller: nil)
+        }
+        super.init()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusView.onClick = { [weak self] in self?.togglePopover(nil) }
+        statusView.onRightClick = { [weak self] in self?.showContextMenu() }
+        item.view = statusView
+        statusItem = item
+
+        let hosting = NSHostingController(rootView: PopoverView(monitor: monitor, displays: displays, fanControl: fanControl))
+        hosting.sizingOptions = [.preferredContentSize]
+        let popover = NSPopover()
+        popover.contentViewController = hosting
+        popover.behavior = .transient
+        popover.delegate = self
+        self.popover = popover
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(openSettings),
+                                               name: .openSettings,
+                                               object: nil)
+
+        // Live status-bar title based on settings.
+        let render = { [weak self] in self?.renderStatusTitle() }
+        monitor.$metrics
+            .receive(on: RunLoop.main)
+            .sink { _ in render() }
+            .store(in: &cancellables)
+        AppSettings.shared.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { _ in DispatchQueue.main.async { render() } }
+            .store(in: &cancellables)
+        KeyboardLock.shared.$isLocked
+            .receive(on: RunLoop.main)
+            .sink { _ in render() }
+            .store(in: &cancellables)
+
+        monitor.start()
+        displays.refresh() // restore saved display brightness on launch
+        render()
+    }
+
+    private func renderStatusTitle() {
+        let m = monitor.metrics
+        if KeyboardLock.shared.isLocked {
+            statusView.update(icon: "lock.fill", lines: ["LOCKED"], bold: false)
+            return
+        }
+
+        var lines: [String] = []
+        var bold = false
+        switch AppSettings.shared.menuBarContent {
+        case .iconOnly:
+            lines = []
+        case .cpuUsage:
+            lines = ["\(Int((m.cpuUsage * 100).rounded()))%"]
+        case .cpuTemp:
+            lines = [m.cpuTemp.map { "\(Int($0.rounded()))°C" } ?? ""]
+        case .cpuUsageTemp:
+            var parts = ["\(Int((m.cpuUsage * 100).rounded()))%"]
+            if let temp = m.cpuTemp { parts.append("\(Int(temp.rounded()))°C") }
+            lines = [parts.joined(separator: " ")]
+        case .cpuTempFan:
+            var top: [String] = []
+            if let temp = m.cpuTemp { top.append("\(Int(temp.rounded()))°C") }
+            if let gpu = m.gpuTemp { top.append("\(Int(gpu.rounded()))°C") }
+            lines = [top.joined(separator: " / ")]
+            if let maxFan = m.fanSpeeds.max() { lines.append("\(Int(maxFan.rounded())) RPM") }
+            bold = lines.count > 1
+        }
+
+        statusView.update(icon: "cpu", lines: lines, bold: bold)
+    }
+
+    // MARK: - Menu bar interactions
+
+    private func showContextMenu() {
+        let menu = NSMenu()
+        menu.addItem(withTitle: "SentryBar", action: #selector(togglePopover), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit SentryBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: StatusContentView.menuBarHeight + 5), in: statusView)
+    }
+
+    @objc private func togglePopover(_ sender: Any?) {
+        guard let popover else { return }
+        if popover.isShown {
+            popover.performClose(sender)
+        } else {
+            displays.refresh()
+            NSApp.activate(ignoringOtherApps: true)
+            popover.show(relativeTo: statusView.bounds, of: statusView, preferredEdge: .minY)
+            startOutsideClickMonitor()
+        }
+    }
+
+    /// Closes the popover when the user clicks anywhere outside the app
+    /// (desktop, other apps, other menu-bar items). The `.transient` behavior
+    /// alone is unreliable for accessory apps that aren't activated.
+    private func startOutsideClickMonitor() {
+        stopOutsideClickMonitor()
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            self?.popover?.performClose(nil)
+        }
+    }
+
+    private func stopOutsideClickMonitor() {
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        outsideClickMonitor = nil
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        stopOutsideClickMonitor()
+    }
+
+    @objc private func openSettings() {
+        if settingsWindow == nil {
+            let hosting = NSHostingController(rootView: SettingsView())
+            hosting.sizingOptions = [.preferredContentSize]
+            let window = NSWindow(contentViewController: hosting)
+            window.title = "SentryBar Settings"
+            window.styleMask = [.titled, .closable]
+            window.animationBehavior = .none
+            window.setContentSize(NSSize(width: 380, height: 320))
+            window.minSize = NSSize(width: 360, height: 300)
+            window.center()
+            settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        SoftwareBrightness.shared.removeAll()
+        KeyboardLock.shared.unlock()
+    }
+}
