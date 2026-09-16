@@ -23,7 +23,7 @@ final class UpdateService: ObservableObject {
     static let shared = UpdateService()
 
     /// Hosted update manifest URL. Point this at your own `appcast.json`.
-    static let feedURL = "https://raw.githubusercontent.com/YOUR_USERNAME/SentryBar/main/appcast.json"
+    static let feedURL = "https://raw.githubusercontent.com/haniff97/SentryBar/main/appcast.json"
 
     enum State: Equatable {
         case idle
