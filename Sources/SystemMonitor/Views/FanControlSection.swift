@@ -64,7 +64,7 @@ struct FanControlSection: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 10)
         .onAppear { model.refresh() }
     }
 

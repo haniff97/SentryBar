@@ -1,4 +1,20 @@
 import SwiftUI
+
+extension View {
+    /// Card background with a little more contrast and a hairline border so
+    /// adjacent cards don't visually blend into each other.
+    func cardSurface(cornerRadius: CGFloat = 10) -> some View {
+        self
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.gray.opacity(0.16))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+    }
+}
 import AppKit
 
 enum PopoverTab: String, CaseIterable, Identifiable {
@@ -60,6 +76,9 @@ struct PopoverView: View {
         }
         .padding(14)
         .frame(width: 330)
+        // More opaque than the default popover material so the panel doesn't
+        // blend into whatever is behind it.
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.92))
     }
 
     private var systemTab: some View {
@@ -176,7 +195,7 @@ struct PopoverView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 10)
     }
 
     private func computeRow(_ label: String, _ value: Double?, _ history: [Double], _ color: Color) -> some View {
@@ -216,7 +235,7 @@ struct StatCard: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 10)
     }
 }
 
@@ -242,7 +261,7 @@ struct MetricBadge: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 8)
     }
 }
 
@@ -273,7 +292,7 @@ struct DisplaysSection: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 10)
         .onAppear { provider.refresh() }
     }
 
@@ -385,7 +404,7 @@ struct BatteryCard: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+        .cardSurface(cornerRadius: 10)
     }
 
     private func openChargeLimitSettings() {
