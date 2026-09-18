@@ -20,14 +20,28 @@ final class LidClosedMode: ObservableObject {
     }
 
     func setEnabled(_ on: Bool) {
-        let script = "do shell script \"pmset disablesleep \(on ? 1 : 0)\" with administrator privileges"
-        runAdminScript(script) { [weak self] ok, error in
-            DispatchQueue.main.async {
-                if ok {
-                    self?.lastError = nil
-                    self?.enabled = Self.readDisablesleep()
-                } else {
-                    self?.lastError = Self.friendlyError(error)
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Prefer the root helper: once it's running, toggling on/off needs
+            // no password at all. Only the very first launch prompts.
+            if FanRootBridge.shared.setLidSleepDisabled(on) {
+                DispatchQueue.main.async {
+                    self.lastError = nil
+                    self.enabled = Self.readDisablesleep()
+                }
+                return
+            }
+
+            // Fallback: a one-off admin prompt (also useful if the helper
+            // couldn't be launched).
+            let script = "do shell script \"pmset disablesleep \(on ? 1 : 0)\" with administrator privileges"
+            self.runAdminScript(script) { [weak self] ok, error in
+                DispatchQueue.main.async {
+                    if ok {
+                        self?.lastError = nil
+                        self?.enabled = Self.readDisablesleep()
+                    } else {
+                        self?.lastError = Self.friendlyError(error)
+                    }
                 }
             }
         }

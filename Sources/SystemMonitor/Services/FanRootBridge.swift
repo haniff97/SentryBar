@@ -74,6 +74,13 @@ final class FanRootBridge {
         return send("reset") == "ok"
     }
 
+    /// Toggle `pmset disablesleep` via the root helper. No password once the
+    /// helper is running (only the initial launch prompts).
+    func setLidSleepDisabled(_ on: Bool) -> Bool {
+        guard ensureRunning() else { return false }
+        return send(on ? "lidson" : "lidsoff") == "ok"
+    }
+
     // MARK: - Socket I/O
 
     private func helperBinaryPath() -> URL? {

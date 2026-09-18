@@ -247,6 +247,19 @@ func sendReply(_ fd: Int32, _ text: String) {
     _ = data.withCString { write(fd, $0, strlen($0)) }
 }
 
+func setLidSleepDisabled(_ on: Bool) -> Bool {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+    process.arguments = ["disablesleep", on ? "1" : "0"]
+    do {
+        try process.run()
+    } catch {
+        return false
+    }
+    process.waitUntilExit()
+    return process.terminationStatus == 0
+}
+
 func handleCommand(_ line: String, fan: FanControl) -> String {
     let parts = line.split(separator: " ").map(String.init)
     guard let cmd = parts.first else { return "err" }
@@ -264,6 +277,10 @@ func handleCommand(_ line: String, fan: FanControl) -> String {
         return fan.target(id, rpm: rpm) ? "ok" : "err"
     case "reset":
         return fan.reset() ? "ok" : "err"
+    case "lidson":
+        return setLidSleepDisabled(true) ? "ok" : "err"
+    case "lidsoff":
+        return setLidSleepDisabled(false) ? "ok" : "err"
     case "quit":
         return "ok"
     default:
@@ -302,7 +319,7 @@ guard bindResult == 0 else {
 guard listen(fd, 4) == 0 else { exit(1) }
 chmod(socketPath, 0o666)
 
-var idleMs: Int32 = 300_000
+var idleMs: Int32 = 43_200_000 // 12h — stay alive so repeat writes need no password
 
 while true {
     var pfd = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
