@@ -105,7 +105,7 @@ struct PopoverView: View {
                 FanControlSection(model: fanControl,
                                   currentSpeeds: monitor.metrics.fanSpeeds)
             } else {
-                Text("Fans are managed by macOS. Enable Advanced in Settings to control them manually.")
+                Text("Fans are managed by macOS.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -117,6 +117,15 @@ struct PopoverView: View {
                         health: monitor.metrics.batteryHealth,
                         cycleCount: monitor.metrics.batteryCycleCount,
                         temperature: monitor.metrics.batteryTemp)
+
+            HStack {
+                Spacer()
+                Toggle("Advanced", isOn: $settings.advancedMode)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .font(.caption)
+                    .help("Show per-core load and manual fan control")
+            }
         }
     }
 

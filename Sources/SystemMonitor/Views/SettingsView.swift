@@ -46,10 +46,6 @@ struct SettingsView: View {
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
-                Toggle("Show advanced options", isOn: $settings.advancedMode)
-                Text("Reveals per-core load and manual fan control.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
             }
             Section("Privileged Helper") {
                 HStack {
