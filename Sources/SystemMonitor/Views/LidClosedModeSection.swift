@@ -6,9 +6,9 @@ struct LidClosedModeSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: model.enabled ? "laptopcomputer" : "sleep")
+                Image(systemName: model.enabled ? "cup.and.saucer.fill" : "sleep")
                     .foregroundStyle(model.enabled ? Color.green : Color.secondary)
-                Text("Lid Closed Mode")
+                Text("Keep Awake")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -21,14 +21,24 @@ struct LidClosedModeSection: View {
                 .controlSize(.small)
             }
 
+            Picker("", selection: $model.mode) {
+                ForEach(KeepAwakeMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .labelsHidden()
+            .controlSize(.small)
+            .disabled(!model.enabled)
+
             Text(model.enabled
-                 ? "Lid can close while tasks keep running."
-                 : "Closing the lid sleeps the Mac.")
+                 ? (model.statusText ?? "Mac stays awake; the lid can close.")
+                 : "Off — closing the lid sleeps the Mac.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
             if model.enabled {
-                Label("Thermal risk: with the lid shut the Mac can't cool as well. Keep it on a hard surface, plugged in, and avoid heavy sustained loads.", systemImage: "exclamationmark.triangle.fill")
+                Label("Thermal risk: with the lid shut the Mac can't cool as well. Keep it on a hard surface, plugged in, and avoid heavy sustained loads.",
+                      systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
@@ -42,7 +52,7 @@ struct LidClosedModeSection: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(cornerRadius: 10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
         .onAppear { model.refresh() }
     }
 }

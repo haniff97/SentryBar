@@ -72,11 +72,19 @@ final class MonitorService: ObservableObject {
             m.gpuTemp = smc.gpuTemperature()
             m.fanCount = smc.fanCount()
             m.fanSpeeds = smc.fanSpeeds()
+            // Power draw (watts), from the SMC.
+            m.systemPowerW = smc.read("PSTR")?.value
+            m.batteryPowerW = smc.read("PPBR")?.value
+            let adapter = smc.read("PDTR")?.value
+            m.adapterPowerW = (adapter ?? 0) > 0.5 ? adapter : nil
         } else {
             m.cpuTemp = nil
             m.gpuTemp = nil
             m.fanCount = 0
             m.fanSpeeds = []
+            m.systemPowerW = nil
+            m.batteryPowerW = nil
+            m.adapterPowerW = nil
         }
 
         metrics = m

@@ -110,12 +110,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private func showContextMenu() {
         let menu = NSMenu()
-        menu.addItem(withTitle: "SentryBar", action: #selector(togglePopover), keyEquivalent: "")
+        addItem(menu, "SentryBar", #selector(togglePopover))
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        addItem(menu, KeyboardLock.shared.isLocked ? "Unlock Keyboard" : "Lock Keyboard",
+                #selector(toggleKeyboardLock))
+        addItem(menu, LidClosedMode.shared.enabled ? "Disable Keep Awake" : "Enable Keep Awake",
+                #selector(toggleKeepAwake))
+        addItem(menu, "Reset Fans to Auto", #selector(resetFansToAuto))
+        addItem(menu, "Charge Limit…", #selector(openChargeLimit))
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit SentryBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        addItem(menu, "Settings…", #selector(openSettings))
+        menu.addItem(.separator())
+        let quit = NSMenuItem(title: "Quit SentryBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        quit.target = NSApp
+        menu.addItem(quit)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: StatusContentView.menuBarHeight + 5), in: statusView)
+    }
+
+    private func addItem(_ menu: NSMenu, _ title: String, _ action: Selector) {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        menu.addItem(item)
+    }
+
+    @objc private func toggleKeyboardLock() {
+        if KeyboardLock.shared.isLocked {
+            KeyboardLock.shared.unlock()
+        } else {
+            KeyboardLock.shared.lock()
+        }
+    }
+
+    @objc private func toggleKeepAwake() {
+        LidClosedMode.shared.setEnabled(!LidClosedMode.shared.enabled)
+    }
+
+    @objc private func resetFansToAuto() {
+        fanControl.resetAll()
+    }
+
+    @objc private func openChargeLimit() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc private func togglePopover(_ sender: Any?) {

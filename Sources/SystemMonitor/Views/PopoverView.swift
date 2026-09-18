@@ -19,6 +19,7 @@ import AppKit
 
 enum PopoverTab: String, CaseIterable, Identifiable {
     case system = "System"
+    case battery = "Battery"
     case display = "Display"
     case keyboard = "Keyboard"
 
@@ -27,6 +28,7 @@ enum PopoverTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .system: return "gauge.with.dots.needle.67percent"
+        case .battery: return "battery.75"
         case .display: return "sun.max"
         case .keyboard: return "lock"
         }
@@ -63,6 +65,8 @@ struct PopoverView: View {
             switch tab {
             case .system:
                 systemTab
+            case .battery:
+                batteryTab
             case .display:
                 VStack(spacing: 10) {
                     DisplaysSection(provider: displays)
@@ -138,13 +142,52 @@ struct PopoverView: View {
                     .font(.caption)
                     .help("Show per-core load and manual fan control")
             }
+        }
+    }
 
+    private var batteryTab: some View {
+        VStack(spacing: 10) {
             BatteryCard(percent: monitor.metrics.batteryPercent,
                         isCharging: monitor.metrics.isCharging,
                         externalPower: monitor.metrics.externalPower,
                         health: monitor.metrics.batteryHealth,
                         cycleCount: monitor.metrics.batteryCycleCount,
                         temperature: monitor.metrics.batteryTemp)
+            powerCard
+        }
+    }
+
+    private var powerCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Power")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            powerRow("System", monitor.metrics.systemPowerW)
+            powerRow("Battery", monitor.metrics.batteryPowerW,
+                     detail: monitor.metrics.isCharging == true ? "charging" : nil)
+            powerRow("Adapter", monitor.metrics.adapterPowerW)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+    }
+
+    private func powerRow(_ label: String, _ watts: Double?, detail: String? = nil) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 60, alignment: .leading)
+            Text(watts.map { String(format: "%.1f W", abs($0)) } ?? "—")
+                .font(.caption)
+                .fontWeight(.medium)
+                .monospacedDigit()
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer()
         }
     }
 

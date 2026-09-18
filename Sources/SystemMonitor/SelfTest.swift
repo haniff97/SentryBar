@@ -36,6 +36,14 @@ func runSelfTest() {
         print("MEM     unavailable")
     }
 
+    if let smc = SMCHelper() {
+        let sys = smc.read("PSTR")?.value
+        let bat = smc.read("PPBR")?.value
+        let adp = smc.read("PDTR")?.value
+        print(String(format: "POWER   system=%.1fW battery=%.1fW adapter=%.1fW",
+                     sys ?? -1, bat ?? -1, adp ?? -1))
+    }
+
     let b = BatteryInfo.snapshot()
     print("BAT     \(b.percent.map { "\($0)%" } ?? "n/a")"
         + " | charging=\(b.isCharging.map(String.init) ?? "n/a")"
@@ -48,7 +56,7 @@ func runSelfTest() {
     if let smc = SMCHelper() {
         if CommandLine.arguments.contains("--debug-smc") {
             print("SMC     --- raw probe ---")
-            for key in ["FNum", "F0Ac", "F1Ac", "Tp09", "Tp0a", "Tp0b", "Tp0c", "Tp0d", "Tf09", "Tf0a", "Tf0b", "Tf0c", "Tg05", "Tg0c", "Tg0f"] {
+            for key in ["FNum", "F0Ac", "Tp09", "Tp0c", "Tg05"] {
                 if let (type, data) = smc.readKey(key) {
                     let hex = data.map { String(format: "%02x", $0) }.joined()
                     print("SMC     \(key): type=\(type) size=\(data.count) hex=\(hex)")

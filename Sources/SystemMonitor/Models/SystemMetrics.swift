@@ -18,6 +18,9 @@ struct SystemMetrics: Equatable {
     var batteryTemp: Double?
     var batteryHealth: Int?
     var batteryCycleCount: Int?
+    var systemPowerW: Double?
+    var batteryPowerW: Double?
+    var adapterPowerW: Double?
     var fanCount: Int = 0
     var fanSpeeds: [Double] = []
 }
