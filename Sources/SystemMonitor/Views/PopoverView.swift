@@ -166,19 +166,30 @@ struct PopoverView: View {
     }
 
     private var coresCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Cores")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(alignment: .bottom, spacing: 3) {
-                ForEach(monitor.metrics.cpuPerCore.indices, id: \.self) { i in
-                    VStack(spacing: 2) {
-                        Text("\(Int((monitor.metrics.cpuPerCore[i] * 100).rounded()))")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
+        let cores = monitor.metrics.cpuPerCore
+        let average = cores.isEmpty ? 0 : cores.reduce(0, +) / Double(cores.count)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Cores")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int((average * 100).rounded()))% avg")
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(.tertiary)
+            }
+            HStack(alignment: .bottom, spacing: 4) {
+                ForEach(cores.indices, id: \.self) { i in
+                    VStack(spacing: 3) {
+                        Text("\(Int((cores[i] * 100).rounded()))")
+                            .font(.system(size: 8, weight: .semibold, design: .rounded))
                             .monospacedDigit()
-                        CoreBar(value: monitor.metrics.cpuPerCore[i])
+                            .foregroundStyle(.secondary)
+                        CoreBar(value: cores[i])
+                            .frame(height: 32)
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -215,13 +226,25 @@ struct StatCard: View {
 struct CoreBar: View {
     let value: Double
 
+    private var color: Color {
+        switch value {
+        case ..<0.5: return .blue
+        case ..<0.8: return .orange
+        default: return .red
+        }
+    }
+
     var body: some View {
         GeometryReader { geo in
-            let height = geo.size.height * CGFloat(min(max(value, 0), 1))
+            let height = geo.size.height
+            let fraction = min(max(value, 0), 1)
+            let fill = fraction > 0.001 ? max(height * CGFloat(fraction), 3) : 0
             ZStack(alignment: .bottom) {
-                Capsule().fill(Color.gray.opacity(0.15))
-                Capsule().fill(Color.blue.opacity(0.85))
-                    .frame(height: max(height, 2))
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(Color.gray.opacity(0.14))
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(color)
+                    .frame(height: fill)
             }
         }
     }
