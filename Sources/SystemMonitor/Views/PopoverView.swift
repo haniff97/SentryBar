@@ -76,9 +76,9 @@ struct PopoverView: View {
         }
         .padding(14)
         .frame(width: 330)
-        // More opaque than the default popover material so the panel doesn't
-        // blend into whatever is behind it.
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.92))
+        // Uniform frosted background: blurs what's behind so the panel doesn't
+        // blend unevenly with the screen, while staying slightly translucent.
+        .background(.regularMaterial)
     }
 
     private var systemTab: some View {
