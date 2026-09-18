@@ -52,7 +52,9 @@ final class LidClosedMode: ObservableObject {
     private static func readDisablesleep() -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        process.arguments = ["-g", "custom"]
+        // `pmset -g` reports the live value as `SleepDisabled <0|1>`;
+        // `pmset -g custom` does NOT include it, so don't use that.
+        process.arguments = ["-g"]
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
@@ -64,10 +66,14 @@ final class LidClosedMode: ObservableObject {
         process.waitUntilExit()
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8) ?? ""
-        guard let range = output.range(of: #"disablesleep\s+(\d)"#, options: .regularExpression) else {
+        guard let range = output.range(of: #"SleepDisabled\s+(\d)"#, options: .regularExpression) else {
             return false
         }
-        let value = output[range].split(separator: " ").last ?? "0"
+        // pmset separates fields with tabs, so split on any whitespace.
+        let value = output[range]
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .last ?? "0"
         return value == "1"
     }
 
