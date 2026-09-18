@@ -111,13 +111,6 @@ struct PopoverView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            BatteryCard(percent: monitor.metrics.batteryPercent,
-                        isCharging: monitor.metrics.isCharging,
-                        externalPower: monitor.metrics.externalPower,
-                        health: monitor.metrics.batteryHealth,
-                        cycleCount: monitor.metrics.batteryCycleCount,
-                        temperature: monitor.metrics.batteryTemp)
-
             HStack {
                 Spacer()
                 Toggle("Advanced", isOn: $settings.advancedMode)
@@ -126,6 +119,13 @@ struct PopoverView: View {
                     .font(.caption)
                     .help("Show per-core load and manual fan control")
             }
+
+            BatteryCard(percent: monitor.metrics.batteryPercent,
+                        isCharging: monitor.metrics.isCharging,
+                        externalPower: monitor.metrics.externalPower,
+                        health: monitor.metrics.batteryHealth,
+                        cycleCount: monitor.metrics.batteryCycleCount,
+                        temperature: monitor.metrics.batteryTemp)
         }
     }
 
