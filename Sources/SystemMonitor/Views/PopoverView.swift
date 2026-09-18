@@ -295,10 +295,14 @@ struct MetricBadge: View {
                 Text(label)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                 Text(value)
                     .font(.caption)
                     .fontWeight(.medium)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
         }
         .padding(.horizontal, 10)
