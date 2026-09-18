@@ -28,9 +28,10 @@ struct LidClosedModeSection: View {
                 .foregroundStyle(.secondary)
 
             if model.enabled {
-                Text("Keep it plugged into power.")
+                Label("Thermal risk: with the lid shut the Mac can't cool as well. Keep it on a hard surface, plugged in, and avoid heavy sustained loads.", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let error = model.lastError {

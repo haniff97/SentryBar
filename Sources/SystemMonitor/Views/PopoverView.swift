@@ -21,6 +21,7 @@ struct PopoverView: View {
     @ObservedObject var monitor: MonitorService
     @ObservedObject var displays: DisplaysProvider
     @ObservedObject var fanControl: FanControlViewModel
+    @ObservedObject private var settings = AppSettings.shared
     @State private var tab: PopoverTab = .system
 
     private var cpuPercent: String {
@@ -74,7 +75,7 @@ struct PopoverView: View {
                          history: monitor.memHistory)
             }
 
-            if !monitor.metrics.cpuPerCore.isEmpty {
+            if settings.advancedMode, !monitor.metrics.cpuPerCore.isEmpty {
                 coresCard
             }
 
@@ -100,8 +101,15 @@ struct PopoverView: View {
                 }
             }
 
-            FanControlSection(model: fanControl,
-                              currentSpeeds: monitor.metrics.fanSpeeds)
+            if settings.advancedMode {
+                FanControlSection(model: fanControl,
+                                  currentSpeeds: monitor.metrics.fanSpeeds)
+            } else {
+                Text("Fans are managed by macOS. Enable Advanced in Settings to control them manually.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             BatteryCard(percent: monitor.metrics.batteryPercent,
                         isCharging: monitor.metrics.isCharging,
@@ -362,7 +370,7 @@ struct BatteryCard: View {
             Button {
                 openChargeLimitSettings()
             } label: {
-                Label("Set Charge Limit (80–100%)", systemImage: "battery.75")
+                Label("Set Charge Limit (80% recommended)", systemImage: "battery.75")
                     .frame(maxWidth: .infinity)
             }
             .font(.caption)

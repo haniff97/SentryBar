@@ -93,6 +93,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             lines = [top.joined(separator: " / ")]
             if let maxFan = m.fanSpeeds.max() { lines.append("\(Int(maxFan.rounded())) RPM") }
             bold = lines.count > 1
+        case .fanRPM:
+            if let maxFan = m.fanSpeeds.max() {
+                lines = ["\(Int(maxFan.rounded())) RPM"]
+            } else {
+                lines = ["fan n/a"]
+            }
+        case .battery:
+            lines = [m.batteryPercent.map { "\($0)%" } ?? "no battery"]
         }
 
         statusView.update(icon: "cpu", lines: lines, bold: bold)

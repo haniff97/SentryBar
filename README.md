@@ -55,6 +55,28 @@ launch. If so, either:
   xattr -cr /Applications/SentryBar.app
   ```
 
+### With Homebrew
+
+```bash
+brew tap haniff97/sentrybar https://github.com/haniff97/SentryBar
+brew install --cask sentrybar
+```
+
+(The cask lives in `Casks/sentrybar.rb`. If Homebrew complains the app is
+damaged/unidentified, run the `xattr -cr` command above.)
+
+### First-run notes
+
+- **Fan control** needs a privileged helper. Open **Settings → Privileged
+  Helper → Install / Launch Helper**; macOS will ask for your admin password
+  **once** (this is what lets SentryBar write to the SMC). It's off until you do.
+- **Lid Closed Mode** is **off by default** (it carries a thermal risk — see below).
+- **Charge limit**: the battery card links to macOS's native charge setting
+  (80% is a good default).
+- **Advanced options** (per-core load, manual fan RPM, fan linking) are hidden
+  until you enable **Settings → General → Show advanced options**, so the main
+  view stays simple.
+
 ### Permissions (only needed for Keyboard Lock)
 
 To block keys, SentryBar needs **both**:

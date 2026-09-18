@@ -4,6 +4,25 @@ struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var updater = UpdateService.shared
 
+    @State private var helperRunning = false
+    @State private var helperBusy = false
+    @State private var helperMessage: String?
+
+    private func installHelper() {
+        helperBusy = true
+        helperMessage = nil
+        DispatchQueue.global(qos: .userInitiated).async {
+            let ok = FanRootBridge.shared.ensureRunning()
+            DispatchQueue.main.async {
+                helperBusy = false
+                helperRunning = FanRootBridge.shared.isRunning()
+                if !ok {
+                    helperMessage = "Helper did not start. Approve the admin prompt and try again."
+                }
+            }
+        }
+    }
+
     var body: some View {
         Form {
             Section("Monitoring") {
@@ -24,6 +43,28 @@ struct SettingsView: View {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
                 if let error = settings.launchAtLoginError {
                     Text(error)
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+                Toggle("Show advanced options", isOn: $settings.advancedMode)
+                Text("Reveals per-core load and manual fan control.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Privileged Helper") {
+                HStack {
+                    Text(helperRunning ? "Helper running" : "Helper not running")
+                        .foregroundStyle(helperRunning ? .green : .secondary)
+                    Spacer()
+                    if helperBusy { ProgressView().controlSize(.small) }
+                }
+                Button("Install / Launch Helper") { installHelper() }
+                    .disabled(helperBusy)
+                Text("Used for fan control. macOS asks for your admin password once — this lets SentryBar write to the SMC.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                if let helperMessage {
+                    Text(helperMessage)
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
@@ -78,7 +119,10 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .padding(14)
         .frame(width: 380)
-        .onAppear { settings.refreshLaunchStatus() }
+        .onAppear {
+            settings.refreshLaunchStatus()
+            helperRunning = FanRootBridge.shared.isRunning()
+        }
     }
 
     @ViewBuilder

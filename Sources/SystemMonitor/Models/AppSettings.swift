@@ -7,6 +7,8 @@ enum MenuBarContent: String, CaseIterable, Identifiable {
     case cpuTemp = "CPU temperature"
     case cpuUsageTemp = "CPU usage + temperature"
     case cpuTempFan = "CPU temp + fan"
+    case fanRPM = "Fan RPM"
+    case battery = "Battery %"
 
     var id: String { rawValue }
 }
@@ -22,6 +24,7 @@ final class AppSettings: ObservableObject {
     }
     @AppStorage("autoUnlockSeconds") var autoUnlockSeconds: Double = 0
     @AppStorage("escapeComboEnabled") var escapeComboEnabled: Bool = true
+    @AppStorage("advancedMode") var advancedMode: Bool = false
 
     @Published private(set) var launchAtLoginStatus: Bool = false
     @Published private(set) var launchAtLoginError: String?
