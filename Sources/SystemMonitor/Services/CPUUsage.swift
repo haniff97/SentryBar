@@ -1,6 +1,19 @@
 import Foundation
 import Darwin
 
+/// Apple Silicon core topology (performance vs efficiency core counts).
+enum CoreTopology {
+    static let performanceCores: Int = sysctlInt("hw.perflevel0.logicalcpu") ?? 0
+    static let efficiencyCores: Int = sysctlInt("hw.perflevel1.logicalcpu") ?? 0
+
+    private static func sysctlInt(_ name: String) -> Int? {
+        var value: Int = 0
+        var size = MemoryLayout<Int>.size
+        guard sysctlbyname(name, &value, &size, nil, 0) == 0 else { return nil }
+        return value
+    }
+}
+
 /// Reads CPU usage by diffing per-core tick counters from the Mach kernel.
 /// Public API: `host_processor_info` + `PROCESSOR_CPU_LOAD_INFO`.
 final class CPUUsage {
@@ -17,9 +30,9 @@ final class CPUUsage {
 
     init() {}
 
-    /// Returns (overall usage 0...1, per-core usage 0...1).
-    /// First call returns 0 since it needs a baseline.
-    func sample() -> (overall: Double, perCore: [Double])? {
+    /// Returns overall usage, per-core usage, and the P-core / E-core averages.
+    /// First call returns zeros since it needs a baseline.
+    func sample() -> (overall: Double, perCore: [Double], pCore: Double?, eCore: Double?)? {
         var cpuInfo: processor_info_array_t?
         var numCpuInfo: mach_msg_type_number_t = 0
         var numCPUs: natural_t = 0
@@ -55,7 +68,7 @@ final class CPUUsage {
 
         guard let previous = previous else {
             self.previous = ticks
-            return (0, Array(repeating: 0, count: count))
+            return (0, Array(repeating: 0, count: count), nil, nil)
         }
         self.previous = ticks
 
@@ -72,6 +85,17 @@ final class CPUUsage {
         }
 
         let overall = deltaTotal > 0 ? Double(busyTotal) / Double(deltaTotal) : 0
-        return (overall, perCore)
+
+        // Apple Silicon enumerates efficiency cores first (logical CPUs
+        // 0..E-1 = "E", the rest = "P"), per the IORegistry device tree.
+        let eCount = min(CoreTopology.efficiencyCores, count)
+        var pCore: Double?
+        var eCore: Double?
+        if eCount > 0, eCount < count {
+            eCore = perCore[0..<eCount].reduce(0, +) / Double(eCount)
+            let pCount = count - eCount
+            pCore = perCore[eCount..<count].reduce(0, +) / Double(pCount)
+        }
+        return (overall, perCore, pCore, eCore)
     }
 }

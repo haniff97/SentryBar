@@ -4,6 +4,9 @@ import Foundation
 struct SystemMetrics: Equatable {
     var cpuUsage: Double = 0
     var cpuPerCore: [Double] = []
+    var pCoreUsage: Double?
+    var eCoreUsage: Double?
+    var gpuUsage: Double?
     var cpuTemp: Double?
     var gpuTemp: Double?
     var memoryUsage: Double = 0

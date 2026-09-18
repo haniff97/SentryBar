@@ -6,10 +6,14 @@ final class MonitorService: ObservableObject {
     @Published private(set) var metrics = SystemMetrics()
     @Published private(set) var cpuHistory: [Double] = []
     @Published private(set) var memHistory: [Double] = []
+    @Published private(set) var pHistory: [Double] = []
+    @Published private(set) var eHistory: [Double] = []
+    @Published private(set) var gpuHistory: [Double] = []
     @Published private(set) var lastUpdated: Date?
     @Published private(set) var smcAvailable: Bool
 
     private let cpu = CPUUsage()
+    private let gpu = GPUUsageReader()
     let smc: SMCHelper?
     private var timer: Timer?
     private var settingsCancellable: AnyCancellable?
@@ -45,7 +49,10 @@ final class MonitorService: ObservableObject {
         if let cpuInfo = cpu.sample() {
             m.cpuUsage = cpuInfo.overall
             m.cpuPerCore = cpuInfo.perCore
+            m.pCoreUsage = cpuInfo.pCore
+            m.eCoreUsage = cpuInfo.eCore
         }
+        m.gpuUsage = gpu.utilization()
         if let mem = MemoryInfo.usage() {
             m.memoryUsage = mem.usedFraction
             m.usedGB = mem.usedGB
@@ -75,9 +82,16 @@ final class MonitorService: ObservableObject {
         metrics = m
         cpuHistory.append(m.cpuUsage)
         memHistory.append(m.memoryUsage)
+        pHistory.append(m.pCoreUsage ?? 0)
+        eHistory.append(m.eCoreUsage ?? 0)
+        gpuHistory.append(m.gpuUsage ?? 0)
         if cpuHistory.count > historyCapacity {
-            cpuHistory.removeFirst(cpuHistory.count - historyCapacity)
-            memHistory.removeFirst(memHistory.count - historyCapacity)
+            let drop = cpuHistory.count - historyCapacity
+            cpuHistory.removeFirst(drop)
+            memHistory.removeFirst(drop)
+            pHistory.removeFirst(drop)
+            eHistory.removeFirst(drop)
+            gpuHistory.removeFirst(drop)
         }
         lastUpdated = Date()
     }

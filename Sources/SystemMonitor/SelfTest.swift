@@ -17,6 +17,14 @@ func runSelfTest() {
             .map { String(format: "  c%d: %.0f%%", $0.offset, $0.element * 100) }
             .joined()
         print("CPU     per-core:\(cores)")
+        if let p = c.pCore, let e = c.eCore {
+            print(String(format: "CPU     P-cores: %.0f%%  E-cores: %.0f%%", p * 100, e * 100))
+        }
+        if let gpu = GPUUsageReader().utilization() {
+            print(String(format: "GPU     usage: %.0f%%", gpu * 100))
+        } else {
+            print("GPU     usage: unavailable")
+        }
     } else {
         print("CPU     unavailable")
     }

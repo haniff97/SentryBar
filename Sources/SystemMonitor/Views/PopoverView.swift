@@ -75,8 +75,8 @@ struct PopoverView: View {
                          history: monitor.memHistory)
             }
 
-            if settings.advancedMode, !monitor.metrics.cpuPerCore.isEmpty {
-                coresCard
+            if settings.advancedMode, monitor.metrics.pCoreUsage != nil {
+                computeCard
             }
 
             HStack(spacing: 8) {
@@ -165,37 +165,34 @@ struct PopoverView: View {
         }
     }
 
-    private var coresCard: some View {
-        let cores = monitor.metrics.cpuPerCore
-        let average = cores.isEmpty ? 0 : cores.reduce(0, +) / Double(cores.count)
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Cores")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(Int((average * 100).rounded()))% avg")
-                    .font(.caption2)
-                    .monospacedDigit()
-                    .foregroundStyle(.tertiary)
-            }
-            HStack(alignment: .bottom, spacing: 4) {
-                ForEach(cores.indices, id: \.self) { i in
-                    VStack(spacing: 3) {
-                        Text("\(Int((cores[i] * 100).rounded()))")
-                            .font(.system(size: 8, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                        CoreBar(value: cores[i])
-                            .frame(height: 32)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
+    private var computeCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Compute")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            computeRow("P-cores", monitor.metrics.pCoreUsage, monitor.pHistory, .blue)
+            computeRow("E-cores", monitor.metrics.eCoreUsage, monitor.eHistory, .teal)
+            computeRow("GPU", monitor.metrics.gpuUsage, monitor.gpuHistory, .purple)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
+    }
+
+    private func computeRow(_ label: String, _ value: Double?, _ history: [Double], _ color: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 52, alignment: .leading)
+            Text(value.map { "\(Int(($0 * 100).rounded()))%" } ?? "n/a")
+                .font(.caption)
+                .fontWeight(.medium)
+                .monospacedDigit()
+                .frame(width: 36, alignment: .trailing)
+            MiniGraph(values: history, color: color)
+                .frame(height: 18)
+        }
     }
 }
 
@@ -220,33 +217,6 @@ struct StatCard: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.08)))
-    }
-}
-
-struct CoreBar: View {
-    let value: Double
-
-    private var color: Color {
-        switch value {
-        case ..<0.5: return .blue
-        case ..<0.8: return .orange
-        default: return .red
-        }
-    }
-
-    var body: some View {
-        GeometryReader { geo in
-            let height = geo.size.height
-            let fraction = min(max(value, 0), 1)
-            let fill = fraction > 0.001 ? max(height * CGFloat(fraction), 3) : 0
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Color.gray.opacity(0.14))
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(color)
-                    .frame(height: fill)
-            }
-        }
     }
 }
 
