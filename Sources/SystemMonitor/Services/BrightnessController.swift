@@ -59,7 +59,9 @@ enum BrightnessController {
 
     /// CoreDisplay only drives Apple displays (built-in + Apple externals).
     /// Generic monitors (HP, Dell, LG…) ignore these calls.
+    /// Apple panels report vendor `0x0610` ("APP") for built-in, or `0x05AC`.
     static func isAppleDisplay(_ displayID: UInt32) -> Bool {
-        vendorID(displayID: displayID) == 0x05AC
+        guard let vendor = vendorID(displayID: displayID) else { return false }
+        return vendor == 0x0610 || vendor == 0x05AC
     }
 }

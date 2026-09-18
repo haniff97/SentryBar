@@ -27,10 +27,24 @@ final class LidClosedMode: ObservableObject {
                     self?.lastError = nil
                     self?.enabled = Self.readDisablesleep()
                 } else {
-                    self?.lastError = error ?? "Could not change the setting."
+                    self?.lastError = Self.friendlyError(error)
                 }
             }
         }
+    }
+
+    private static func friendlyError(_ raw: String?) -> String {
+        guard let raw, !raw.isEmpty else {
+            return "Could not change the setting. Toggle again and approve the admin prompt."
+        }
+        let lower = raw.lowercased()
+        if lower.contains("user cancelled") || lower.contains("-128") {
+            return "Admin authorization was cancelled. Toggle again and enter your password to allow it."
+        }
+        if lower.contains("not authorized") || lower.contains("-60007") {
+            return "Not authorized. Approve the admin prompt to change this setting."
+        }
+        return raw
     }
 
     // MARK: - Internals
