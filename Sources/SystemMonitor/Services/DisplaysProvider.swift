@@ -18,6 +18,7 @@ struct DisplayInfo: Identifiable {
 /// on launch, so the last adjustment is remembered.
 final class DisplaysProvider: ObservableObject {
     @Published private(set) var displays: [DisplayInfo] = []
+    @Published private(set) var selectedDisplayID: UInt32?
 
     private let defaults = UserDefaults.standard
 
@@ -49,11 +50,20 @@ final class DisplaysProvider: ObservableObject {
             ))
         }
         displays = result
+        // Keep a valid selection (default to the main / first display).
+        if selectedDisplayID == nil || !result.contains(where: { $0.id == selectedDisplayID }) {
+            selectedDisplayID = result.first(where: { $0.isMain })?.id ?? result.first?.id
+        }
         SoftwareBrightness.shared.reconcile(activeDisplayIDs: Set(result.map(\.id)))
+    }
+
+    func select(displayID: UInt32) {
+        selectedDisplayID = displayID
     }
 
     func setBrightness(displayID: UInt32, value: Double) {
         guard let idx = displays.firstIndex(where: { $0.id == displayID }) else { return }
+        selectedDisplayID = displayID
         if displays[idx].software {
             SoftwareBrightness.shared.setBrightness(displayID: displayID, level: value)
             saveLevel(value, for: displays[idx].name)
@@ -61,6 +71,12 @@ final class DisplaysProvider: ObservableObject {
             BrightnessController.setBrightness(displayID: displayID, value: value)
         }
         displays[idx].brightness = value
+    }
+
+    /// Current brightness of the selected display, 0...1.
+    func selectedBrightness() -> Double? {
+        guard let id = selectedDisplayID else { return nil }
+        return displays.first(where: { $0.id == id })?.brightness
     }
 
     // MARK: - Persistence (per display name)

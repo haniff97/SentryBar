@@ -25,6 +25,7 @@ final class AppSettings: ObservableObject {
     @AppStorage("autoUnlockSeconds") var autoUnlockSeconds: Double = 0
     @AppStorage("escapeComboEnabled") var escapeComboEnabled: Bool = true
     @AppStorage("advancedMode") var advancedMode: Bool = false
+    @AppStorage("brightnessShortcuts") var brightnessShortcuts: Bool = true
 
     @Published private(set) var launchAtLoginStatus: Bool = false
     @Published private(set) var launchAtLoginError: String?

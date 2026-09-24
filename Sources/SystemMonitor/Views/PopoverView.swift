@@ -332,9 +332,10 @@ struct DisplaysSection: View {
                 ForEach(provider.displays) { display in
                     row(display)
                 }
-                Text("Apple displays adjust hardware; others use a software overlay.")
+                Text("Select a display, then use F1 / F2 to adjust it. Apple displays use hardware; others use a software overlay.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(10)
@@ -345,6 +346,9 @@ struct DisplaysSection: View {
 
     private func row(_ display: DisplayInfo) -> some View {
         HStack(spacing: 8) {
+            Image(systemName: provider.selectedDisplayID == display.id ? "checkmark.circle.fill" : "circle")
+                .font(.caption)
+                .foregroundStyle(provider.selectedDisplayID == display.id ? Color.accentColor : Color.secondary)
             Image(systemName: display.software ? "sun.min" : "display")
                 .foregroundStyle(.secondary)
             Text(display.isMain ? "\(display.name) (built-in)" : display.name)
@@ -362,6 +366,8 @@ struct DisplaysSection: View {
                     .controlSize(.small)
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture { provider.select(displayID: display.id) }
     }
 
     private func binding(for display: DisplayInfo, initial: Double) -> Binding<Double> {

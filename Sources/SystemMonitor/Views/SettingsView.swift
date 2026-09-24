@@ -47,6 +47,12 @@ struct SettingsView: View {
                         .foregroundStyle(.orange)
                 }
             }
+            Section("Shortcuts") {
+                Toggle("F1 / F2 adjust display brightness", isOn: $settings.brightnessShortcuts)
+                Text("F1 lowers, F2 raises the brightness of the display you last selected in the Display tab.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             Section("Privileged Helper") {
                 HStack {
                     Text(helperRunning ? "Helper running" : "Helper not running")

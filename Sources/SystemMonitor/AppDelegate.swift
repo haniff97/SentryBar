@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             .store(in: &cancellables)
         AppSettings.shared.objectWillChange
             .receive(on: RunLoop.main)
-            .sink { _ in DispatchQueue.main.async { render() } }
+            .sink { _ in DispatchQueue.main.async { self.updateBrightnessShortcuts() } }
             .store(in: &cancellables)
         KeyboardLock.shared.$isLocked
             .receive(on: RunLoop.main)
@@ -63,7 +63,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         monitor.start()
         displays.refresh() // restore saved display brightness on launch
+        updateBrightnessShortcuts()
         render()
+    }
+
+    private func updateBrightnessShortcuts() {
+        if AppSettings.shared.brightnessShortcuts {
+            BrightnessShortcuts.shared.start(displays: displays)
+        } else {
+            BrightnessShortcuts.shared.stop()
+        }
     }
 
     private func renderStatusTitle() {
